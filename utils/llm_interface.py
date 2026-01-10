@@ -6,6 +6,10 @@ import requests
 import json
 from typing import Optional
 from config import settings
+from utils.logger import setup_logger
+
+# Set up logger
+logger = setup_logger(__name__)
 
 
 class LocalLLM:
@@ -23,7 +27,10 @@ class LocalLLM:
             self.base_url = settings.LM_STUDIO_BASE_URL
             self.model = settings.LM_STUDIO_MODEL
         else:
+            logger.error(f"Unsupported LLM provider: {self.provider}")
             raise ValueError(f"Unsupported provider: {self.provider}")
+        
+        logger.info(f"Initialized LocalLLM with provider: {self.provider}, model: {self.model}")
     
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """
@@ -36,17 +43,20 @@ class LocalLLM:
         Returns:
             Generated text response
         """
+        logger.debug(f"Generating response using {self.provider}")
         try:
             if self.provider == "ollama":
                 return self._generate_ollama(prompt, system_prompt)
             elif self.provider == "lm_studio":
                 return self._generate_lm_studio(prompt, system_prompt)
         except requests.exceptions.ConnectionError:
+            logger.error(f"Could not connect to {self.provider}")
             raise ConnectionError(
                 f"Could not connect to {self.provider}. "
                 f"Please ensure {self.provider} is running."
             )
         except Exception as e:
+            logger.error(f"Error generating response: {str(e)}")
             raise Exception(f"Error generating response: {str(e)}")
     
     def _generate_ollama(self, prompt: str, system_prompt: Optional[str] = None) -> str:

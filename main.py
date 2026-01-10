@@ -6,8 +6,8 @@ from generators.blog_generator import generate_blog_outline
 
 # Page configuration
 st.set_page_config(
-    page_title="Content Idea Generator",
-    page_icon="✍️",
+    page_title="Tech Blog Generator",
+    page_icon="💻",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -63,15 +63,15 @@ def main():
     """Main application function"""
     
     # Header
-    st.markdown('<div class="main-header">✍️ Content Idea Generator</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">AI-powered content creation assistance using local LLMs</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">💻 Tech Blog Generator</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">AI-powered technical blog creation with custom knowledge base using local LLMs</div>', unsafe_allow_html=True)
     
     # Sidebar - Generator Selection (for now just Blog)
     with st.sidebar:
-        st.header("🎯 Select Generator")
+        st.header("🎯 Tech Blog Tools")
         generator_type = st.radio(
-            "Choose content type:",
-            ["📝 Blog Post Outline", "📱 Social Media Calendar (Coming Soon)", "✨ Writing Prompts (Coming Soon)"],
+            "Choose tool:",
+            ["📝 Tech Blog Outline", "📱 Social Media Calendar (Coming Soon)", "✨ Writing Prompts (Coming Soon)"],
             index=0
         )
         
@@ -102,8 +102,8 @@ def main():
 def render_blog_generator():
     """Render the blog post outline generator interface"""
     
-    st.header("📝 Blog Post Outline Generator")
-    st.markdown("Generate SEO-friendly blog post outlines with headlines, structure, and key points.")
+    st.header("📝 Tech Blog Outline Generator")
+    st.markdown("Generate SEO-friendly technical blog post outlines with headlines, structure, and key points.")
     
     # Input form
     with st.form("blog_form"):
@@ -142,13 +142,14 @@ def render_blog_generator():
         submitted = st.form_submit_button("🚀 Generate Blog Outline")
     
     # Show example
-    with st.expander("💡 See Example Topics"):
+    with st.expander("💡 See Example Tech Topics"):
         st.markdown("""
-        - **Technology:** "Building Your First Mobile App with Flutter"
-        - **Business:** "10 Productivity Hacks for Remote Teams"
-        - **Health:** "Beginner's Guide to Meal Prep for Busy Professionals"
-        - **Finance:** "Understanding Cryptocurrency for First-Time Investors"
-        - **Education:** "How to Learn a New Language in 6 Months"
+        - **Backend:** "Building a RESTful API with FastAPI and PostgreSQL"
+        - **DevOps:** "Complete Guide to CI/CD with GitHub Actions"
+        - **Frontend:** "State Management in React: Redux vs Context API"
+        - **Cloud:** "Deploying Microservices on AWS EKS"
+        - **AI/ML:** "Fine-tuning Large Language Models for Production"
+        - **Security:** "Implementing OAuth 2.0 in Modern Web Applications"
         """)
     
     # Process form submission
@@ -158,13 +159,14 @@ def render_blog_generator():
             return
         
         # Generate outline
-        with st.spinner("🤔 Generating your blog outline... This may take 10-30 seconds"):
+        with st.spinner("🤔 Generating your tech blog outline... This may take 10-30 seconds"):
             try:
                 result = generate_blog_outline(
                     topic=topic.strip(),
                     audience=audience,
                     length=length,
-                    content_type=content_type
+                    content_type=content_type,
+                    custom_context=custom_context.strip() if custom_context else None
                 )
                 
                 # Store in session state

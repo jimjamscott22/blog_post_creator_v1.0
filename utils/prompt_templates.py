@@ -3,7 +3,7 @@ Prompt templates for different content generators
 """
 
 
-def get_blog_outline_prompt(topic: str, audience: str, length: str, content_type: str) -> str:
+def get_blog_outline_prompt(topic: str, audience: str, length: str, content_type: str, custom_context: str = None) -> str:
     """
     Generate a prompt for creating a blog post outline
     
@@ -12,6 +12,7 @@ def get_blog_outline_prompt(topic: str, audience: str, length: str, content_type
         audience: Target audience level (beginners, intermediate, experts)
         length: Desired length (short, medium, long)
         content_type: Type of content (tutorial, listicle, how-to, opinion)
+        custom_context: Optional custom information to incorporate
     
     Returns:
         Formatted prompt string
@@ -26,7 +27,17 @@ def get_blog_outline_prompt(topic: str, audience: str, length: str, content_type
     
     length_description = length_guide.get(length.lower(), "1500-2000 words")
     
-    prompt = f"""Create a comprehensive blog post outline about "{topic}" for {audience} readers.
+    # Add custom context section if provided
+    context_section = ""
+    if custom_context and custom_context.strip():
+        context_section = f"""\n\nCUSTOM CONTEXT/KNOWLEDGE BASE:
+{custom_context}
+
+IMPORTANT: Use the information from the custom context above to make the blog outline more specific, 
+accurate, and relevant. Reference specific features, technologies, or details mentioned in the context.
+"""
+    
+    prompt = f"""Create a comprehensive technical blog post outline about "{topic}" for {audience} readers.{context_section}
 
 Content Type: {content_type}
 Target Length: {length_description}

@@ -111,3 +111,29 @@ ollama run llama3.2 "Hello, how are you?"
 
 **Check if LM Studio server is running:**
 Visit http://localhost:1234/v1/models in your browser
+
+## Step 7: Launch the Tech Blog Generator
+
+Once everything is set up, activate your virtual environment and launch the web UI:
+
+```bash
+source venv/bin/activate
+streamlit run main.py
+```
+
+The app will open in your browser at http://localhost:8501 (or 8502 if 8501 is in use).
+
+## Using the Custom Knowledge Base
+
+The Tech Blog Generator includes a powerful **Custom Knowledge Base** feature:
+
+1. Click the "📚 Custom Knowledge Base (Optional)" expander
+2. Add any technical information you want the AI to reference:
+   - API documentation
+   - Technical specifications
+   - Product features
+   - Code examples
+   - Company-specific terminology
+3. Generate your blog outline - the AI will incorporate your custom context
+
+**Example:** If you're writing about "Building a REST API" and provide FastAPI documentation in the knowledge base, the generated outline will reference specific FastAPI features and best practices.

@@ -1,6 +1,5 @@
 """
-Test script for Blog Generator
-Step 1.3: Test the blog outline generation functionality
+Test script for Tech Blog Generator with Custom Context
 """
 import sys
 from generators.blog_generator import generate_blog_outline
@@ -16,31 +15,52 @@ if sys.platform == 'win32':
 
 def main():
     logger.info("=" * 60)
-    logger.info("Testing Blog Outline Generator")
+    logger.info("Testing Tech Blog Generator with Custom Context")
     logger.info("=" * 60)
     
     # Test parameters
-    test_topic = "Getting Started with Local AI Models"
-    test_audience = "beginners"
+    test_topic = "Building a Real-time Chat Application"
+    test_audience = "intermediate"
     test_length = "medium"
     test_type = "tutorial"
+    
+    # Custom technical context
+    custom_context = """
+    Technology Stack:
+    - Backend: FastAPI (Python 3.11+)
+    - WebSocket support: FastAPI's native WebSocket implementation
+    - Database: PostgreSQL with SQLAlchemy ORM
+    - Real-time features: Redis for pub/sub messaging
+    - Authentication: JWT tokens with OAuth2
+    - Deployment: Docker containers on AWS ECS
+    
+    Key Features:
+    - Real-time message delivery with <100ms latency
+    - Support for group chats and direct messages
+    - Message persistence and history retrieval
+    - Typing indicators and read receipts
+    - File sharing (images, documents up to 10MB)
+    - End-to-end encryption using AES-256
+    """
     
     logger.info(f"Topic: {test_topic}")
     logger.info(f"Audience: {test_audience}")
     logger.info(f"Length: {test_length}")
     logger.info(f"Type: {test_type}")
-    logger.info("Generating blog outline... (this may take 10-30 seconds)")
+    logger.info("Custom Context: Yes (provided)")
+    logger.info("Generating tech blog outline... (this may take 15-40 seconds)")
     
     try:
-        # Generate the outline
+        # Generate the outline with custom context
         result = generate_blog_outline(
             topic=test_topic,
             audience=test_audience,
             length=test_length,
-            content_type=test_type
+            content_type=test_type,
+            custom_context=custom_context
         )
         
-        logger.info("[SUCCESS] Blog outline generated!")
+        logger.info("[SUCCESS] Tech blog outline generated with custom context!")
         logger.info("=" * 60)
         logger.info(result.to_markdown())
         logger.info("=" * 60)
@@ -50,7 +70,7 @@ def main():
         logger.info(f"  Audience: {result.metadata['audience']}")
         logger.info(f"  Length: {result.metadata['length']}")
         logger.info(f"  Type: {result.metadata['content_type']}")
-        logger.info("[PASS] Blog generator is working correctly!")
+        logger.info("[PASS] Tech Blog Generator with custom context is working!")
         
     except Exception as e:
         logger.error(f"Failed to generate outline: {str(e)}")

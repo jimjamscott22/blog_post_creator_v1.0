@@ -1,22 +1,24 @@
-# Content Idea Generator App - Starter Plan
+# Tech Blog Generator - AI-Powered Technical Content Creation
 
 ## Project Overview
-A tool that helps content creators generate blog outlines, social media calendars, and creative writing prompts using AI assistance.
+A specialized tool that helps technical content creators generate comprehensive blog outlines with custom knowledge base integration. Uses local LLMs (Ollama/LM Studio) for privacy-focused, cost-free content generation.
 
-## Core Features Breakdown
+## Core Features
 
-### 1. Blog Post Generator
+### 1. Tech Blog Outline Generator
 **Inputs:**
-- Topic/keyword focus
+- Topic/keyword focus (technical subject)
 - Target audience (beginners, intermediate, experts)
 - Desired length (short, medium, long)
 - Content type (tutorial, listicle, how-to, opinion)
+- **Custom Knowledge Base** (optional): Add your own documentation, API specs, or technical context
 
 **Outputs:**
 - SEO-friendly headline suggestions (5-10 options)
 - Structured outline with section headers
 - Key points for each section
 - Suggested subtopics to cover
+- Technical details based on your custom context
 
 ### 2. Social Media Calendar Generator
 **Inputs:**

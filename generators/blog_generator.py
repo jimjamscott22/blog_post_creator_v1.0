@@ -5,6 +5,10 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from utils.llm_interface import llm
 from utils.prompt_templates import get_blog_outline_prompt
+from utils.logger import setup_logger
+
+# Set up logger
+logger = setup_logger(__name__)
 
 
 class BlogInput(BaseModel):
@@ -16,7 +20,7 @@ class BlogInput(BaseModel):
     
     class Config:
         # Valid options for each field
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "topic": "Getting Started with Python Programming",
                 "audience": "beginners",
@@ -43,7 +47,8 @@ def generate_blog_outline(
     topic: str,
     audience: str = "intermediate",
     length: str = "medium",
-    content_type: str = "how-to"
+    content_type: str = "how-to",
+    custom_context: Optional[str] = None
 ) -> BlogOutline:
     """
     Generate a blog post outline using the local LLM
@@ -53,6 +58,7 @@ def generate_blog_outline(
         audience: Target audience (beginners, intermediate, experts)
         length: Desired length (short, medium, long)
         content_type: Type of content (tutorial, listicle, how-to, opinion)
+        custom_context: Optional custom information/documentation to reference
     
     Returns:
         BlogOutline object with generated content
@@ -62,32 +68,42 @@ def generate_blog_outline(
         Exception: If generation fails
     """
     
+    logger.info(f"Generating blog outline for topic: '{topic}'")
+    logger.debug(f"Parameters - audience: {audience}, length: {length}, type: {content_type}")
+    
     # Validate inputs
     valid_audiences = ["beginners", "intermediate", "experts"]
     valid_lengths = ["short", "medium", "long"]
     valid_types = ["tutorial", "listicle", "how-to", "opinion"]
     
     if audience.lower() not in valid_audiences:
+        logger.error(f"Invalid audience: {audience}")
         raise ValueError(f"Audience must be one of: {', '.join(valid_audiences)}")
     
     if length.lower() not in valid_lengths:
+        logger.error(f"Invalid length: {length}")
         raise ValueError(f"Length must be one of: {', '.join(valid_lengths)}")
     
     if content_type.lower() not in valid_types:
+        logger.error(f"Invalid content type: {content_type}")
         raise ValueError(f"Content type must be one of: {', '.join(valid_types)}")
     
     # Generate the prompt
-    prompt = get_blog_outline_prompt(topic, audience, length, content_type)
+    prompt = get_blog_outline_prompt(topic, audience, length, content_type, custom_context)
+    logger.debug("Prompt generated successfully")
     
     # System prompt for consistent output
-    system_prompt = """You are an expert content strategist and SEO specialist. 
-You create detailed, actionable blog post outlines that are easy to follow and implement.
+    system_prompt = """You are an expert technical content strategist and SEO specialist.
+You create detailed, actionable technical blog post outlines that are easy to follow and implement.
 Your outlines are well-structured, comprehensive, and tailored to the target audience.
+When provided with custom context or documentation, you incorporate that information accurately.
 Always format your output clearly with proper headers, bullet points, and sections."""
     
     try:
         # Generate the outline
+        logger.info("Sending request to LLM...")
         response = llm.generate(prompt=prompt, system_prompt=system_prompt)
+        logger.info("Successfully received response from LLM")
         
         # Create the outline object
         outline = BlogOutline(
@@ -102,9 +118,11 @@ Always format your output clearly with proper headers, bullet points, and sectio
             }
         )
         
+        logger.info(f"Blog outline created successfully for '{topic}'")
         return outline
         
     except Exception as e:
+        logger.error(f"Failed to generate blog outline: {str(e)}")
         raise Exception(f"Failed to generate blog outline: {str(e)}")
 
 
