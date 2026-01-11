@@ -76,7 +76,7 @@ class LocalLLM:
         if system_prompt:
             payload["system"] = system_prompt
         
-        response = requests.post(url, json=payload, timeout=120)
+        response = requests.post(url, json=payload, timeout=600)
         response.raise_for_status()
         
         result = response.json()
@@ -98,7 +98,7 @@ class LocalLLM:
             "max_tokens": self.max_tokens
         }
         
-        response = requests.post(url, json=payload, timeout=120)
+        response = requests.post(url, json=payload, timeout=600)
         response.raise_for_status()
         
         result = response.json()

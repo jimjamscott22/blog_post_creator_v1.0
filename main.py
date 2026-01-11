@@ -93,7 +93,7 @@ def main():
             pass
     
     # Main content area
-    if "Blog Post" in generator_type:
+    if "Tech Blog Outline" in generator_type:
         render_blog_generator()
     else:
         st.info("🚧 This feature is coming soon! Stay tuned.")
@@ -137,6 +137,14 @@ def render_blog_generator():
                 index=2,
                 help="What type of blog post are you writing?"
             )
+        
+        # Custom context input (full width)
+        custom_context = st.text_area(
+            "📚 Custom Context (Optional)",
+            placeholder="Add any specific information, requirements, or context for your blog post...",
+            help="Provide additional context that will be used to customize your blog outline",
+            height=100
+        )
         
         # Submit button
         submitted = st.form_submit_button("🚀 Generate Blog Outline")
