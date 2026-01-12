@@ -76,21 +76,47 @@ def main():
         )
         
         st.markdown("---")
+        st.subheader("🤖 Model Selection")
+        
+        # Get available models
+        try:
+            from utils.llm_interface import llm, LocalLLM
+            
+            available_models = LocalLLM.get_available_models()
+            
+            if available_models:
+                # Model selector
+                selected_model = st.selectbox(
+                    "Choose Model:",
+                    options=available_models,
+                    index=available_models.index(llm.model) if llm.model in available_models 
+                          else (available_models.index(f"{llm.model}:latest") if f"{llm.model}:latest" in available_models else 0),
+                    help="Select which local model to use for generation"
+                )
+                
+                # Store in session state
+                st.session_state['selected_model'] = selected_model
+                
+                # Display model info
+                st.caption(f"Provider: {llm.provider}")
+                
+                # Refresh button
+                if st.button("🔄 Refresh Models"):
+                    st.rerun()
+            else:
+                st.warning(f"⚠️ Could not load models from {llm.provider}")
+                st.caption("Make sure your LLM service is running")
+                st.session_state['selected_model'] = None
+        except Exception as e:
+            st.error(f"Error loading models: {str(e)}")
+            st.session_state['selected_model'] = None
+        
+        st.markdown("---")
         st.subheader("ℹ️ About")
         st.info(
             "This app uses local AI models (Ollama/LM Studio) to generate "
             "content ideas. No data is sent to external APIs!"
         )
-        
-        # Display current model info
-        try:
-            from utils.llm_interface import llm
-            st.markdown("---")
-            st.subheader("🤖 Current Model")
-            st.text(f"Provider: {llm.provider}")
-            st.text(f"Model: {llm.model}")
-        except:
-            pass
     
     # Main content area
     if "Tech Blog Outline" in generator_type:
@@ -169,12 +195,16 @@ def render_blog_generator():
         # Generate outline
         with st.spinner("🤔 Generating your tech blog outline... This may take 10-30 seconds"):
             try:
+                # Get selected model from session state
+                selected_model = st.session_state.get('selected_model', None)
+                
                 result = generate_blog_outline(
                     topic=topic.strip(),
                     audience=audience,
                     length=length,
                     content_type=content_type,
-                    custom_context=custom_context.strip() if custom_context else None
+                    custom_context=custom_context.strip() if custom_context else None,
+                    model_override=selected_model
                 )
                 
                 # Store in session state

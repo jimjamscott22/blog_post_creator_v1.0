@@ -5,16 +5,19 @@
 ### Option A: Ollama (Recommended - Easier)
 
 1. **Download Ollama:**
+
    - Windows: https://ollama.com/download/windows
    - Mac: https://ollama.com/download/mac
    - Linux: `curl -fsSL https://ollama.com/install.sh | sh`
 
 2. **Install a Model:**
+
    ```bash
    ollama pull llama3.2
    ```
-   
+
    Or try other models:
+
    ```bash
    ollama pull mistral
    ollama pull phi3
@@ -28,11 +31,13 @@
 ### Option B: LM Studio
 
 1. **Download LM Studio:**
+
    - Go to https://lmstudio.ai/
    - Download for your OS (Windows/Mac/Linux)
    - Install and launch
 
 2. **Download a Model:**
+
    - In LM Studio, go to the Search tab
    - Download a model (e.g., "Mistral-7B", "Llama-3.2")
    - Wait for download to complete
@@ -51,16 +56,19 @@ python -m venv venv
 ## Step 3: Activate Virtual Environment
 
 **Windows (PowerShell):**
+
 ```bash
 .\venv\Scripts\Activate.ps1
 ```
 
 **Windows (Command Prompt):**
+
 ```bash
 venv\Scripts\activate.bat
 ```
 
 **Mac/Linux:**
+
 ```bash
 source venv/bin/activate
 ```
@@ -76,6 +84,7 @@ pip install -r requirements.txt
 Create a `.env` file in the project root:
 
 **For Ollama:**
+
 ```
 LLM_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
@@ -85,6 +94,7 @@ TEMPERATURE=0.7
 ```
 
 **For LM Studio:**
+
 ```
 LLM_PROVIDER=lm_studio
 LM_STUDIO_BASE_URL=http://localhost:1234/v1
@@ -100,11 +110,13 @@ Once your local LLM is running and configured, you're ready to move to Step 1.2!
 ## Quick Start Commands
 
 **Start Ollama (if not auto-started):**
+
 ```bash
 ollama serve
 ```
 
 **Test Ollama:**
+
 ```bash
 ollama run llama3.2 "Hello, how are you?"
 ```

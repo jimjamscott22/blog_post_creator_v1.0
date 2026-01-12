@@ -15,17 +15,17 @@ logger = setup_logger(__name__)
 class LocalLLM:
     """Wrapper for local LLM inference"""
     
-    def __init__(self):
+    def __init__(self, model_override: Optional[str] = None):
         self.provider = settings.LLM_PROVIDER
         self.max_tokens = settings.MAX_TOKENS
         self.temperature = settings.TEMPERATURE
         
         if self.provider == "ollama":
             self.base_url = settings.OLLAMA_BASE_URL
-            self.model = settings.OLLAMA_MODEL
+            self.model = model_override or settings.OLLAMA_MODEL
         elif self.provider == "lm_studio":
             self.base_url = settings.LM_STUDIO_BASE_URL
-            self.model = settings.LM_STUDIO_MODEL
+            self.model = model_override or settings.LM_STUDIO_MODEL
         else:
             logger.error(f"Unsupported LLM provider: {self.provider}")
             raise ValueError(f"Unsupported provider: {self.provider}")
@@ -119,7 +119,9 @@ class LocalLLM:
                 models = response.json().get("models", [])
                 model_names = [m.get("name") for m in models]
                 
-                if self.model in model_names:
+                # Check if model exists (with or without :latest suffix)
+                model_found = self.model in model_names or f"{self.model}:latest" in model_names
+                if model_found:
                     return True, f"[OK] Connected to Ollama. Model '{self.model}' is available."
                 else:
                     return False, f"[ERROR] Model '{self.model}' not found. Available: {', '.join(model_names)}"
@@ -134,6 +136,42 @@ class LocalLLM:
             return False, f"[ERROR] Cannot connect to {self.provider}. Is it running?"
         except Exception as e:
             return False, f"[ERROR] Error: {str(e)}"
+    
+    @staticmethod
+    def get_available_models(provider: str = None) -> list[str]:
+        """
+        Get list of available models from the LLM provider
+        
+        Args:
+            provider: LLM provider ("ollama" or "lm_studio"). Uses settings default if None.
+        
+        Returns:
+            List of available model names
+        """
+        provider = provider or settings.LLM_PROVIDER
+        
+        try:
+            if provider == "ollama":
+                base_url = settings.OLLAMA_BASE_URL
+                response = requests.get(f"{base_url}/api/tags", timeout=5)
+                response.raise_for_status()
+                models = response.json().get("models", [])
+                return [m.get("name") for m in models if m.get("name")]
+            
+            elif provider == "lm_studio":
+                base_url = settings.LM_STUDIO_BASE_URL
+                response = requests.get(f"{base_url}/models", timeout=5)
+                response.raise_for_status()
+                models_data = response.json()
+                # LM Studio returns OpenAI-compatible format
+                if "data" in models_data:
+                    return [m.get("id") for m in models_data["data"] if m.get("id")]
+                return []
+            
+            return []
+        except Exception as e:
+            logger.warning(f"Could not fetch models from {provider}: {str(e)}")
+            return []
 
 
 # Create a singleton instance

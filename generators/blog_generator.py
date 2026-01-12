@@ -3,7 +3,7 @@ Blog Post Outline Generator
 """
 from typing import Optional
 from pydantic import BaseModel, Field
-from utils.llm_interface import llm
+from utils.llm_interface import llm, LocalLLM
 from utils.prompt_templates import get_blog_outline_prompt
 from utils.logger import setup_logger
 
@@ -48,7 +48,8 @@ def generate_blog_outline(
     audience: str = "intermediate",
     length: str = "medium",
     content_type: str = "how-to",
-    custom_context: Optional[str] = None
+    custom_context: Optional[str] = None,
+    model_override: Optional[str] = None
 ) -> BlogOutline:
     """
     Generate a blog post outline using the local LLM
@@ -59,6 +60,7 @@ def generate_blog_outline(
         length: Desired length (short, medium, long)
         content_type: Type of content (tutorial, listicle, how-to, opinion)
         custom_context: Optional custom information/documentation to reference
+        model_override: Optional specific model to use (overrides default)
     
     Returns:
         BlogOutline object with generated content
@@ -70,6 +72,8 @@ def generate_blog_outline(
     
     logger.info(f"Generating blog outline for topic: '{topic}'")
     logger.debug(f"Parameters - audience: {audience}, length: {length}, type: {content_type}")
+    if model_override:
+        logger.debug(f"Using model override: {model_override}")
     
     # Validate inputs
     valid_audiences = ["beginners", "intermediate", "experts"]
@@ -100,9 +104,12 @@ When provided with custom context or documentation, you incorporate that informa
 Always format your output clearly with proper headers, bullet points, and sections."""
     
     try:
+        # Use model override if provided, otherwise use default
+        llm_instance = LocalLLM(model_override=model_override) if model_override else llm
+        
         # Generate the outline
         logger.info("Sending request to LLM...")
-        response = llm.generate(prompt=prompt, system_prompt=system_prompt)
+        response = llm_instance.generate(prompt=prompt, system_prompt=system_prompt)
         logger.info("Successfully received response from LLM")
         
         # Create the outline object
@@ -113,8 +120,8 @@ Always format your output clearly with proper headers, bullet points, and sectio
                 "audience": audience,
                 "length": length,
                 "content_type": content_type,
-                "model": llm.model,
-                "provider": llm.provider
+                "model": llm_instance.model,
+                "provider": llm_instance.provider
             }
         )
         
