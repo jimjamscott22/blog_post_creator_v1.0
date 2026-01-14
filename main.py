@@ -2,11 +2,23 @@
 Content Idea Generator App - Main Streamlit Application
 """
 import streamlit as st
+import re
 from generators.blog_generator import generate_blog_outline
+from generators.social_generator import generate_social_calendar
+
+
+def sanitize_filename(text: str) -> str:
+    """Sanitize text for use in filenames by removing or replacing unsafe characters"""
+    # Replace spaces with underscores
+    text = text.replace(' ', '_')
+    # Remove or replace characters that are not alphanumeric, underscore, or hyphen
+    text = re.sub(r'[^\w\-]', '', text)
+    # Limit length to avoid overly long filenames
+    return text[:100]
 
 # Page configuration
 st.set_page_config(
-    page_title="Tech Blog Generator",
+    page_title="Content Generator",
     page_icon="💻",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -63,15 +75,15 @@ def main():
     """Main application function"""
     
     # Header
-    st.markdown('<div class="main-header">💻 Tech Blog Generator</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">AI-powered technical blog creation with custom knowledge base using local LLMs</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">💻 Content Idea Generator</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">AI-powered content creation with custom knowledge base using local LLMs</div>', unsafe_allow_html=True)
     
     # Sidebar - Generator Selection (for now just Blog)
     with st.sidebar:
-        st.header("🎯 Tech Blog Tools")
+        st.header("🎯 Content Tools")
         generator_type = st.radio(
             "Choose tool:",
-            ["📝 Tech Blog Outline", "📱 Social Media Calendar (Coming Soon)", "✨ Writing Prompts (Coming Soon)"],
+            ["📝 Tech Blog Outline", "📱 Social Media Calendar", "✨ Writing Prompts (Coming Soon)"],
             index=0
         )
         
@@ -121,6 +133,8 @@ def main():
     # Main content area
     if "Tech Blog Outline" in generator_type:
         render_blog_generator()
+    elif "Social Media Calendar" in generator_type:
+        render_social_generator()
     else:
         st.info("🚧 This feature is coming soon! Stay tuned.")
 
@@ -250,7 +264,7 @@ def display_blog_result(result):
         st.download_button(
             label="💾 Download as Markdown",
             data=result.to_markdown(),
-            file_name=f"blog_outline_{result.topic.replace(' ', '_')}.md",
+            file_name=f"blog_outline_{sanitize_filename(result.topic)}.md",
             mime="text/markdown"
         )
     
@@ -277,6 +291,162 @@ def display_blog_result(result):
         with col2:
             st.metric("Length", result.metadata['length'].title())
             st.metric("Model", result.metadata['model'])
+
+
+def render_social_generator():
+    """Render the social media calendar generator interface"""
+    
+    st.header("📱 Social Media Calendar Generator")
+    st.markdown("Generate platform-optimized social media content calendars with post ideas, engagement prompts, and hashtags.")
+    
+    # Input form
+    with st.form("social_form"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            theme = st.text_input(
+                "🎨 Theme",
+                placeholder="e.g., Artificial Intelligence and Machine Learning",
+                help="The main theme for your social media content"
+            )
+            
+            platform = st.selectbox(
+                "📱 Platform",
+                ["LinkedIn", "Twitter", "Instagram", "Facebook", "TikTok"],
+                index=0,
+                help="Which social media platform are you targeting?"
+            )
+            
+            frequency = st.selectbox(
+                "📅 Frequency",
+                ["daily", "3x week", "2x week", "weekly"],
+                index=1,
+                help="How often do you want to post?"
+            )
+        
+        with col2:
+            timeframe = st.selectbox(
+                "⏰ Timeframe",
+                ["week", "month", "quarter"],
+                index=1,
+                help="What time period should the calendar cover?"
+            )
+            
+            tone = st.selectbox(
+                "🎭 Tone",
+                ["professional", "casual", "friendly", "educational", "inspirational", "humorous"],
+                index=0,
+                help="What tone should your content have?"
+            )
+        
+        # Submit button
+        submitted = st.form_submit_button("🚀 Generate Social Calendar")
+    
+    # Show example
+    with st.expander("💡 See Example Themes"):
+        st.markdown("""
+        - **Tech/AI:** "Artificial Intelligence and Machine Learning Trends"
+        - **Marketing:** "Digital Marketing Tips for Small Businesses"
+        - **Productivity:** "Remote Work and Productivity Hacks"
+        - **Health:** "Fitness and Wellness Journey"
+        - **Business:** "Entrepreneurship and Startup Insights"
+        - **Design:** "UI/UX Design Best Practices"
+        """)
+    
+    # Process form submission
+    if submitted:
+        if not theme or len(theme.strip()) < 3:
+            st.error("⚠️ Please enter a valid theme (at least 3 characters)")
+            return
+        
+        # Generate calendar
+        with st.spinner("🤔 Generating your social media calendar... This may take 10-30 seconds"):
+            try:
+                # Get selected model from session state
+                selected_model = st.session_state.get('selected_model', None)
+                
+                result = generate_social_calendar(
+                    theme=theme.strip(),
+                    platform=platform,
+                    frequency=frequency,
+                    timeframe=timeframe,
+                    tone=tone,
+                    model_override=selected_model
+                )
+                
+                # Store in session state
+                st.session_state['last_result'] = result
+                st.session_state['last_type'] = 'social'
+                
+                # Success message
+                st.success("✅ Social media calendar generated successfully!")
+                
+                # Display result
+                display_social_result(result)
+                
+            except Exception as e:
+                st.error(f"❌ Error generating calendar: {str(e)}")
+                st.info("""
+                **Troubleshooting:**
+                - Ensure Ollama is running (`ollama list` to verify)
+                - Check your `.env` file configuration
+                - Verify the model is available
+                - Try a simpler theme if the generation fails
+                """)
+    
+    # Display previous result if exists
+    elif 'last_result' in st.session_state and st.session_state.get('last_type') == 'social':
+        st.info("📋 Showing previous result. Generate a new one using the form above.")
+        display_social_result(st.session_state['last_result'])
+
+
+def display_social_result(result):
+    """Display the generated social media calendar"""
+    
+    st.markdown("---")
+    st.subheader("📄 Generated Calendar")
+    
+    # Tabs for different views
+    tab1, tab2, tab3 = st.tabs(["📖 Formatted View", "📝 Markdown", "ℹ️ Metadata"])
+    
+    with tab1:
+        # Display the calendar in a nice format
+        st.markdown(result.calendar)
+        
+        # Copy button
+        st.download_button(
+            label="💾 Download as Markdown",
+            data=result.to_markdown(),
+            file_name=f"social_calendar_{sanitize_filename(result.theme)}.md",
+            mime="text/markdown"
+        )
+    
+    with tab2:
+        # Raw markdown view with copy functionality
+        st.code(result.to_markdown(), language="markdown")
+        
+        # Text area for easy copying
+        st.text_area(
+            "Copy the calendar below:",
+            value=result.to_markdown(),
+            height=300,
+            help="Select all (Ctrl+A) and copy (Ctrl+C)"
+        )
+    
+    with tab3:
+        # Display metadata
+        st.json(result.metadata)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Platform", result.metadata['platform'])
+            st.metric("Frequency", result.metadata['frequency'])
+            st.metric("Timeframe", result.metadata['timeframe'])
+        with col2:
+            st.metric("Tone", result.metadata['tone'].title())
+            st.metric("Model", result.metadata['model'])
+            if 'provider' in result.metadata:
+                st.metric("Provider", result.metadata['provider'])
 
 
 if __name__ == "__main__":
