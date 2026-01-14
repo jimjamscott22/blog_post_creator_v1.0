@@ -5,6 +5,7 @@ import streamlit as st
 import re
 from generators.blog_generator import generate_blog_outline
 from generators.social_generator import generate_social_calendar
+from generators.writing_generator import generate_writing_prompt
 
 
 def sanitize_filename(text: str) -> str:
@@ -83,7 +84,7 @@ def main():
         st.header("🎯 Content Tools")
         generator_type = st.radio(
             "Choose tool:",
-            ["📝 Tech Blog Outline", "📱 Social Media Calendar", "✨ Writing Prompts (Coming Soon)"],
+            ["📝 Tech Blog Outline", "📱 Social Media Calendar", "✨ Creative Writing Prompts"],
             index=0
         )
         
@@ -135,6 +136,8 @@ def main():
         render_blog_generator()
     elif "Social Media Calendar" in generator_type:
         render_social_generator()
+    elif "Creative Writing Prompts" in generator_type:
+        render_writing_generator()
     else:
         st.info("🚧 This feature is coming soon! Stay tuned.")
 
@@ -447,6 +450,165 @@ def display_social_result(result):
             st.metric("Model", result.metadata['model'])
             if 'provider' in result.metadata:
                 st.metric("Provider", result.metadata['provider'])
+
+
+def render_writing_generator():
+    """Render the creative writing prompt generator interface"""
+    
+    st.header("✨ Creative Writing Prompt Generator")
+    st.markdown("Generate original, inspiring creative writing prompts with rich details, character ideas, and plot directions.")
+    
+    # Input form
+    with st.form("writing_form"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            genre = st.selectbox(
+                "📚 Genre",
+                ["sci-fi", "mystery", "romance", "fantasy", "horror", "thriller", "historical", "literary fiction", "adventure"],
+                index=0,
+                help="Choose your preferred writing genre"
+            )
+            
+            prompt_type = st.selectbox(
+                "🎯 Prompt Type",
+                ["character", "plot", "world-building", "dialogue", "setting"],
+                index=1,
+                help="What aspect should the prompt focus on?"
+            )
+        
+        with col2:
+            complexity = st.selectbox(
+                "📊 Complexity Level",
+                ["simple", "moderate", "complex"],
+                index=1,
+                help="Simple: Straightforward prompts | Moderate: Multiple elements | Complex: Layered narratives"
+            )
+        
+        # Constraints input (full width)
+        constraints = st.text_area(
+            "🔧 Additional Constraints (Optional)",
+            placeholder="e.g., Must include a time travel element, Set in Victorian era, Include a mentor character...",
+            help="Add specific requirements or elements you want in the prompt",
+            height=80
+        )
+        
+        # Submit button
+        submitted = st.form_submit_button("🚀 Generate Writing Prompt")
+    
+    # Show example
+    with st.expander("💡 See Example Prompt Ideas"):
+        st.markdown("""
+        **Character Prompts:**
+        - "A retired superhero who discovers they're losing their powers"
+        - "Twins separated at birth with opposing magical abilities"
+        
+        **Plot Prompts:**
+        - "A murder mystery set on a generation ship"
+        - "The last day before an apocalyptic event"
+        
+        **World-Building Prompts:**
+        - "A society where memories can be bought and sold"
+        - "A city built entirely in the canopy of giant trees"
+        
+        **Dialogue Prompts:**
+        - "A conversation between a time traveler and their past self"
+        - "Two enemies forced to work together"
+        
+        **Setting Prompts:**
+        - "An abandoned theme park reclaimed by nature"
+        - "A library that exists outside of time"
+        """)
+    
+    # Process form submission
+    if submitted:
+        # Generate prompt
+        with st.spinner("🤔 Crafting your creative writing prompt... This may take 10-30 seconds"):
+            try:
+                # Get selected model from session state
+                selected_model = st.session_state.get('selected_model', None)
+                
+                result = generate_writing_prompt(
+                    genre=genre,
+                    prompt_type=prompt_type,
+                    complexity=complexity,
+                    constraints=constraints.strip() if constraints else None,
+                    model_override=selected_model
+                )
+                
+                # Store in session state
+                st.session_state['last_result'] = result
+                st.session_state['last_type'] = 'writing'
+                
+                # Success message
+                st.success("✅ Writing prompt generated successfully!")
+                
+                # Display result
+                display_writing_result(result)
+                
+            except Exception as e:
+                st.error(f"❌ Error generating prompt: {str(e)}")
+                st.info("""
+                **Troubleshooting:**
+                - Ensure Ollama is running (`ollama list` to verify)
+                - Check your `.env` file configuration
+                - Verify the model is available
+                - Try without additional constraints if the generation fails
+                """)
+    
+    # Display previous result if exists
+    elif 'last_result' in st.session_state and st.session_state.get('last_type') == 'writing':
+        st.info("📋 Showing previous result. Generate a new one using the form above.")
+        display_writing_result(st.session_state['last_result'])
+
+
+def display_writing_result(result):
+    """Display the generated creative writing prompt"""
+    
+    st.markdown("---")
+    st.subheader("📄 Generated Writing Prompt")
+    
+    # Tabs for different views
+    tab1, tab2, tab3 = st.tabs(["📖 Formatted View", "📝 Markdown", "ℹ️ Metadata"])
+    
+    with tab1:
+        # Display the prompt in a nice format
+        st.markdown(result.prompt)
+        
+        # Copy button
+        st.download_button(
+            label="💾 Download as Markdown",
+            data=result.to_markdown(),
+            file_name=f"writing_prompt_{sanitize_filename(result.genre)}.md",
+            mime="text/markdown"
+        )
+    
+    with tab2:
+        # Raw markdown view with copy functionality
+        st.code(result.to_markdown(), language="markdown")
+        
+        # Text area for easy copying
+        st.text_area(
+            "Copy the prompt below:",
+            value=result.to_markdown(),
+            height=300,
+            help="Select all (Ctrl+A) and copy (Ctrl+C)"
+        )
+    
+    with tab3:
+        # Display metadata
+        st.json(result.metadata)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Genre", result.genre.title())
+            st.metric("Prompt Type", result.metadata['prompt_type'].title())
+            st.metric("Complexity", result.metadata['complexity'].title())
+        with col2:
+            st.metric("Model", result.metadata['model'])
+            st.metric("Provider", result.metadata['provider'])
+            if result.metadata.get('constraints') and result.metadata['constraints'] != "None":
+                st.metric("Constraints", "Yes")
 
 
 if __name__ == "__main__":
