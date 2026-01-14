@@ -54,7 +54,7 @@ def generate_writing_prompt(
     Generate a creative writing prompt using the local LLM
     
     Args:
-        genre: Genre preference (sci-fi, mystery, romance, fantasy, horror, thriller, historical)
+        genre: Genre preference (sci-fi, mystery, romance, fantasy, horror, thriller, historical, literary fiction, adventure)
         prompt_type: Type of prompt (character, plot, world-building, dialogue, setting)
         complexity: Complexity level (simple, moderate, complex)
         constraints: Optional additional constraints or requirements
