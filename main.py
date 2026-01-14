@@ -2,8 +2,19 @@
 Content Idea Generator App - Main Streamlit Application
 """
 import streamlit as st
+import re
 from generators.blog_generator import generate_blog_outline
 from generators.social_generator import generate_social_calendar
+
+
+def sanitize_filename(text: str) -> str:
+    """Sanitize text for use in filenames by removing or replacing unsafe characters"""
+    # Replace spaces with underscores
+    text = text.replace(' ', '_')
+    # Remove or replace characters that are not alphanumeric, underscore, or hyphen
+    text = re.sub(r'[^\w\-]', '', text)
+    # Limit length to avoid overly long filenames
+    return text[:100]
 
 # Page configuration
 st.set_page_config(
@@ -253,7 +264,7 @@ def display_blog_result(result):
         st.download_button(
             label="💾 Download as Markdown",
             data=result.to_markdown(),
-            file_name=f"blog_outline_{result.topic.replace(' ', '_')}.md",
+            file_name=f"blog_outline_{sanitize_filename(result.topic)}.md",
             mime="text/markdown"
         )
     
@@ -406,7 +417,7 @@ def display_social_result(result):
         st.download_button(
             label="💾 Download as Markdown",
             data=result.to_markdown(),
-            file_name=f"social_calendar_{result.theme.replace(' ', '_')}.md",
+            file_name=f"social_calendar_{sanitize_filename(result.theme)}.md",
             mime="text/markdown"
         )
     

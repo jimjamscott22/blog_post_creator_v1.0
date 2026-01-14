@@ -101,7 +101,7 @@ def generate_social_calendar(
     
     # Generate the prompt
     prompt = get_social_media_prompt(theme, frequency, platform, timeframe, tone)
-    logger.debug("Prompt generated successfully")
+    logger.debug(f"Prompt generated successfully (length: {len(prompt)} chars)")
     
     # System prompt for consistent output
     system_prompt = """You are an expert social media strategist and content creator.
