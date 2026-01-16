@@ -48,7 +48,8 @@ def generate_writing_prompt(
     prompt_type: str = "plot",
     complexity: str = "moderate",
     constraints: Optional[str] = None,
-    model_override: Optional[str] = None
+    model_override: Optional[str] = None,
+    provider_override: Optional[str] = None
 ) -> WritingPrompt:
     """
     Generate a creative writing prompt using the local LLM
@@ -59,6 +60,7 @@ def generate_writing_prompt(
         complexity: Complexity level (simple, moderate, complex)
         constraints: Optional additional constraints or requirements
         model_override: Optional specific model to use (overrides default)
+        provider_override: Optional provider to use ('ollama' or 'lm_studio')
     
     Returns:
         WritingPrompt object with generated content
@@ -72,6 +74,8 @@ def generate_writing_prompt(
     logger.debug(f"Parameters - prompt_type: {prompt_type}, complexity: {complexity}, constraints: {constraints}")
     if model_override:
         logger.debug(f"Using model override: {model_override}")
+    if provider_override:
+        logger.debug(f"Using provider override: {provider_override}")
     
     # Validate inputs
     valid_genres = ["sci-fi", "mystery", "romance", "fantasy", "horror", "thriller", "historical", "literary fiction", "adventure"]
@@ -101,8 +105,21 @@ Your prompts are specific enough to provide direction but open enough to allow c
 Always include rich details about characters, settings, conflicts, and potential story directions."""
     
     try:
-        # Use model override if provided, otherwise use default
+        # Use overrides if provided, otherwise use default
         llm_instance = LocalLLM(model_override=model_override) if model_override else llm
+        
+        # Override provider if specified
+        if provider_override:
+            from config import settings
+            llm_instance.provider = provider_override
+            if provider_override == "ollama":
+                llm_instance.base_url = settings.OLLAMA_BASE_URL
+                if not model_override:
+                    llm_instance.model = settings.OLLAMA_MODEL
+            elif provider_override == "lm_studio":
+                llm_instance.base_url = settings.LM_STUDIO_BASE_URL
+                if not model_override:
+                    llm_instance.model = settings.LM_STUDIO_MODEL
         
         # Generate the writing prompt
         logger.info("Sending request to LLM...")

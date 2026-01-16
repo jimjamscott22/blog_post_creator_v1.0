@@ -65,7 +65,8 @@ def generate_social_calendar(
     platform: str = "LinkedIn",
     timeframe: str = "month",
     tone: str = "professional",
-    model_override: Optional[str] = None) -> SocialMediaCalendar:
+    model_override: Optional[str] = None,
+    provider_override: Optional[str] = None) -> SocialMediaCalendar:
     """
     Generate a social media content calendar using the local LLM
     
@@ -76,6 +77,7 @@ def generate_social_calendar(
         timeframe: Time period (week, month, quarter)
         tone: Brand voice/tone (professional, casual, friendly, educational, inspirational)
         model_override:  Optional specific model to use (overrides default)
+        provider_override: Optional provider to use ('ollama' or 'lm_studio')
     
     Returns:
         SocialMediaCalendar object with generated content
@@ -89,6 +91,8 @@ def generate_social_calendar(
     logger.debug(f"Parameters - frequency: {frequency}, platform: {platform}, timeframe: {timeframe}, tone: {tone}")
     if model_override:
         logger.debug(f"Using model override: {model_override}")
+    if provider_override:
+        logger.debug(f"Using provider override: {provider_override}")
 
     # Validate inputs (case-insensitive checks)
     valid_frequencies = ["daily", "3x week", "2x week", "weekly"]
@@ -124,8 +128,21 @@ You understand platform-specific best practices, optimal posting times, and cont
 Always format your output clearly with dates, post ideas, engagement prompts, and hashtags."""
     
     try:
-        # Use model override if provided, otherwise use default
+        # Use overrides if provided, otherwise use default
         llm_instance = LocalLLM(model_override=model_override) if model_override else llm
+        
+        # Override provider if specified
+        if provider_override:
+            from config import settings
+            llm_instance.provider = provider_override
+            if provider_override == "ollama":
+                llm_instance.base_url = settings.OLLAMA_BASE_URL
+                if not model_override:
+                    llm_instance.model = settings.OLLAMA_MODEL
+            elif provider_override == "lm_studio":
+                llm_instance.base_url = settings.LM_STUDIO_BASE_URL
+                if not model_override:
+                    llm_instance.model = settings.LM_STUDIO_MODEL
         
         # Generate the calendar
         logger.info("Sending request to LLM...")

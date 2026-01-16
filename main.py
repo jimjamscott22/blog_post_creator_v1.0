@@ -89,39 +89,99 @@ def main():
         )
         
         st.markdown("---")
-        st.subheader("🤖 Model Selection")
+        st.subheader("🤖 LLM Provider")
         
-        # Get available models
+        # Provider selection
+        from utils.llm_interface import LocalLLM
+        from config import settings
+        
+        # Initialize session state for provider if not exists
+        if 'selected_provider' not in st.session_state:
+            st.session_state['selected_provider'] = settings.LLM_PROVIDER
+        
+        # Provider selector
+        provider_options = {
+            "Ollama": "ollama",
+            "LM Studio": "lm_studio"
+        }
+        
+        provider_display = st.selectbox(
+            "Choose Provider:",
+            options=list(provider_options.keys()),
+            index=list(provider_options.values()).index(st.session_state.get('selected_provider', 'ollama')),
+            help="Select which LLM provider to use"
+        )
+        
+        selected_provider = provider_options[provider_display]
+        
+        # Check if provider changed
+        provider_changed = st.session_state.get('selected_provider') != selected_provider
+        if provider_changed:
+            st.session_state['selected_provider'] = selected_provider
+            st.session_state['selected_model'] = None  # Reset model when provider changes
+        
+        # Display provider info
+        if selected_provider == "ollama":
+            st.caption(f"🔗 Endpoint: {settings.OLLAMA_BASE_URL}")
+        elif selected_provider == "lm_studio":
+            st.caption(f"🔗 Endpoint: {settings.LM_STUDIO_BASE_URL}")
+        
+        st.markdown("---")
+        st.subheader("📦 Model Selection")
+        
+        # Get available models for selected provider
         try:
-            from utils.llm_interface import llm, LocalLLM
-            
-            available_models = LocalLLM.get_available_models()
+            available_models = LocalLLM.get_available_models(provider=selected_provider)
             
             if available_models:
+                # Get default model for this provider
+                default_model = settings.OLLAMA_MODEL if selected_provider == "ollama" else settings.LM_STUDIO_MODEL
+                
+                # Determine initial selection
+                current_selected = st.session_state.get('selected_model')
+                if current_selected and current_selected in available_models:
+                    default_index = available_models.index(current_selected)
+                elif default_model in available_models:
+                    default_index = available_models.index(default_model)
+                elif f"{default_model}:latest" in available_models:
+                    default_index = available_models.index(f"{default_model}:latest")
+                else:
+                    default_index = 0
+                
                 # Model selector
                 selected_model = st.selectbox(
                     "Choose Model:",
                     options=available_models,
-                    index=available_models.index(llm.model) if llm.model in available_models 
-                          else (available_models.index(f"{llm.model}:latest") if f"{llm.model}:latest" in available_models else 0),
+                    index=default_index,
                     help="Select which local model to use for generation"
                 )
                 
                 # Store in session state
                 st.session_state['selected_model'] = selected_model
                 
-                # Display model info
-                st.caption(f"Provider: {llm.provider}")
+                # Display connection status
+                llm_test = LocalLLM(model_override=selected_model)
+                llm_test.provider = selected_provider
+                llm_test.model = selected_model
+                llm_test.base_url = settings.OLLAMA_BASE_URL if selected_provider == "ollama" else settings.LM_STUDIO_BASE_URL
+                
+                success, message = llm_test.test_connection()
+                if success:
+                    st.success(f"✅ Connected")
+                else:
+                    st.error(f"❌ Connection failed")
+                    st.caption(message)
                 
                 # Refresh button
                 if st.button("🔄 Refresh Models"):
                     st.rerun()
             else:
-                st.warning(f"⚠️ Could not load models from {llm.provider}")
-                st.caption("Make sure your LLM service is running")
+                st.warning(f"⚠️ Could not load models from {provider_display}")
+                st.caption(f"Make sure {provider_display} is running")
                 st.session_state['selected_model'] = None
         except Exception as e:
             st.error(f"Error loading models: {str(e)}")
+            st.caption(f"Is {provider_display} running?")
             st.session_state['selected_model'] = None
         
         st.markdown("---")
@@ -212,8 +272,9 @@ def render_blog_generator():
         # Generate outline
         with st.spinner("🤔 Generating your tech blog outline... This may take 10-30 seconds"):
             try:
-                # Get selected model from session state
+                # Get selected model and provider from session state
                 selected_model = st.session_state.get('selected_model', None)
+                selected_provider = st.session_state.get('selected_provider', None)
                 
                 result = generate_blog_outline(
                     topic=topic.strip(),
@@ -221,7 +282,8 @@ def render_blog_generator():
                     length=length,
                     content_type=content_type,
                     custom_context=custom_context.strip() if custom_context else None,
-                    model_override=selected_model
+                    model_override=selected_model,
+                    provider_override=selected_provider
                 )
                 
                 # Store in session state
@@ -365,8 +427,9 @@ def render_social_generator():
         # Generate calendar
         with st.spinner("🤔 Generating your social media calendar... This may take 10-30 seconds"):
             try:
-                # Get selected model from session state
+                # Get selected model and provider from session state
                 selected_model = st.session_state.get('selected_model', None)
+                selected_provider = st.session_state.get('selected_provider', None)
                 
                 result = generate_social_calendar(
                     theme=theme.strip(),
@@ -374,7 +437,8 @@ def render_social_generator():
                     frequency=frequency,
                     timeframe=timeframe,
                     tone=tone,
-                    model_override=selected_model
+                    model_override=selected_model,
+                    provider_override=selected_provider
                 )
                 
                 # Store in session state
@@ -525,15 +589,17 @@ def render_writing_generator():
         # Generate prompt
         with st.spinner("🤔 Crafting your creative writing prompt... This may take 10-30 seconds"):
             try:
-                # Get selected model from session state
+                # Get selected model and provider from session state
                 selected_model = st.session_state.get('selected_model', None)
+                selected_provider = st.session_state.get('selected_provider', None)
                 
                 result = generate_writing_prompt(
                     genre=genre,
                     prompt_type=prompt_type,
                     complexity=complexity,
                     constraints=constraints.strip() if constraints else None,
-                    model_override=selected_model
+                    model_override=selected_model,
+                    provider_override=selected_provider
                 )
                 
                 # Store in session state

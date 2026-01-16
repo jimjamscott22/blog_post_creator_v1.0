@@ -49,7 +49,8 @@ def generate_blog_outline(
     length: str = "medium",
     content_type: str = "how-to",
     custom_context: Optional[str] = None,
-    model_override: Optional[str] = None
+    model_override: Optional[str] = None,
+    provider_override: Optional[str] = None
 ) -> BlogOutline:
     """
     Generate a blog post outline using the local LLM
@@ -61,6 +62,7 @@ def generate_blog_outline(
         content_type: Type of content (tutorial, listicle, how-to, opinion)
         custom_context: Optional custom information/documentation to reference
         model_override: Optional specific model to use (overrides default)
+        provider_override: Optional provider to use ('ollama' or 'lm_studio')
     
     Returns:
         BlogOutline object with generated content
@@ -74,6 +76,8 @@ def generate_blog_outline(
     logger.debug(f"Parameters - audience: {audience}, length: {length}, type: {content_type}")
     if model_override:
         logger.debug(f"Using model override: {model_override}")
+    if provider_override:
+        logger.debug(f"Using provider override: {provider_override}")
     
     # Validate inputs
     valid_audiences = ["beginners", "intermediate", "experts"]
@@ -104,8 +108,21 @@ When provided with custom context or documentation, you incorporate that informa
 Always format your output clearly with proper headers, bullet points, and sections."""
     
     try:
-        # Use model override if provided, otherwise use default
+        # Use overrides if provided, otherwise use default
         llm_instance = LocalLLM(model_override=model_override) if model_override else llm
+        
+        # Override provider if specified
+        if provider_override:
+            from config import settings
+            llm_instance.provider = provider_override
+            if provider_override == "ollama":
+                llm_instance.base_url = settings.OLLAMA_BASE_URL
+                if not model_override:
+                    llm_instance.model = settings.OLLAMA_MODEL
+            elif provider_override == "lm_studio":
+                llm_instance.base_url = settings.LM_STUDIO_BASE_URL
+                if not model_override:
+                    llm_instance.model = settings.LM_STUDIO_MODEL
         
         # Generate the outline
         logger.info("Sending request to LLM...")
