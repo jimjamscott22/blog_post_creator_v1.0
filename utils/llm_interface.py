@@ -15,10 +15,10 @@ logger = setup_logger(__name__)
 class LocalLLM:
     """Wrapper for local LLM inference"""
     
-    def __init__(self, model_override: Optional[str] = None):
+    def __init__(self, model_override: Optional[str] = None, temperature: Optional[float] = None, max_tokens: Optional[int] = None):
         self.provider = settings.LLM_PROVIDER
-        self.max_tokens = settings.MAX_TOKENS
-        self.temperature = settings.TEMPERATURE
+        self.max_tokens = max_tokens if max_tokens is not None else settings.MAX_TOKENS
+        self.temperature = temperature if temperature is not None else settings.TEMPERATURE
         
         if self.provider == "ollama":
             self.base_url = settings.OLLAMA_BASE_URL
@@ -30,7 +30,7 @@ class LocalLLM:
             logger.error(f"Unsupported LLM provider: {self.provider}")
             raise ValueError(f"Unsupported provider: {self.provider}")
         
-        logger.info(f"Initialized LocalLLM with provider: {self.provider}, model: {self.model}")
+        logger.info(f"Initialized LocalLLM with provider: {self.provider}, model: {self.model}, temperature: {self.temperature}, max_tokens: {self.max_tokens}")
     
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """

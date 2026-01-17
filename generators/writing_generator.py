@@ -49,7 +49,9 @@ def generate_writing_prompt(
     complexity: str = "moderate",
     constraints: Optional[str] = None,
     model_override: Optional[str] = None,
-    provider_override: Optional[str] = None
+    provider_override: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None
 ) -> WritingPrompt:
     """
     Generate a creative writing prompt using the local LLM
@@ -61,6 +63,8 @@ def generate_writing_prompt(
         constraints: Optional additional constraints or requirements
         model_override: Optional specific model to use (overrides default)
         provider_override: Optional provider to use ('ollama' or 'lm_studio')
+        temperature: Optional temperature setting (0.0-2.0)
+        max_tokens: Optional max tokens for response
     
     Returns:
         WritingPrompt object with generated content
@@ -106,7 +110,7 @@ Always include rich details about characters, settings, conflicts, and potential
     
     try:
         # Use overrides if provided, otherwise use default
-        llm_instance = LocalLLM(model_override=model_override) if model_override else llm
+        llm_instance = LocalLLM(model_override=model_override, temperature=temperature, max_tokens=max_tokens) if model_override or temperature is not None or max_tokens is not None else llm
         
         # Override provider if specified
         if provider_override:
@@ -120,6 +124,12 @@ Always include rich details about characters, settings, conflicts, and potential
                 llm_instance.base_url = settings.LM_STUDIO_BASE_URL
                 if not model_override:
                     llm_instance.model = settings.LM_STUDIO_MODEL
+        
+        # Update temperature and max_tokens if provided
+        if temperature is not None:
+            llm_instance.temperature = temperature
+        if max_tokens is not None:
+            llm_instance.max_tokens = max_tokens
         
         # Generate the writing prompt
         logger.info("Sending request to LLM...")

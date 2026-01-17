@@ -6,6 +6,7 @@ import re
 from generators.blog_generator import generate_blog_outline
 from generators.social_generator import generate_social_calendar
 from generators.writing_generator import generate_writing_prompt
+from utils.export_utils import generate_markdown, generate_html
 
 
 def sanitize_filename(text: str) -> str:
@@ -185,6 +186,37 @@ def main():
             st.session_state['selected_model'] = None
         
         st.markdown("---")
+        st.subheader("⚙️ Generation Parameters")
+        
+        # Initialize session state for parameters if not exists
+        if 'temperature' not in st.session_state:
+            st.session_state['temperature'] = 0.7
+        if 'max_tokens' not in st.session_state:
+            st.session_state['max_tokens'] = 2000
+        
+        # Temperature slider
+        temperature = st.slider(
+            "🌡️ Temperature (Creativity)",
+            min_value=0.0,
+            max_value=2.0,
+            value=st.session_state['temperature'],
+            step=0.1,
+            help="Lower = more focused/deterministic (0.0), Higher = more creative/random (2.0)"
+        )
+        st.session_state['temperature'] = temperature
+        
+        # Max tokens slider
+        max_tokens = st.slider(
+            "📏 Max Tokens",
+            min_value=500,
+            max_value=4000,
+            value=st.session_state['max_tokens'],
+            step=100,
+            help="Maximum length of generated response"
+        )
+        st.session_state['max_tokens'] = max_tokens
+        
+        st.markdown("---")
         st.subheader("ℹ️ About")
         st.info(
             "This app uses local AI models (Ollama/LM Studio) to generate "
@@ -275,6 +307,8 @@ def render_blog_generator():
                 # Get selected model and provider from session state
                 selected_model = st.session_state.get('selected_model', None)
                 selected_provider = st.session_state.get('selected_provider', None)
+                temperature = st.session_state.get('temperature', 0.7)
+                max_tokens = st.session_state.get('max_tokens', 2000)
                 
                 result = generate_blog_outline(
                     topic=topic.strip(),
@@ -283,7 +317,9 @@ def render_blog_generator():
                     content_type=content_type,
                     custom_context=custom_context.strip() if custom_context else None,
                     model_override=selected_model,
-                    provider_override=selected_provider
+                    provider_override=selected_provider,
+                    temperature=temperature,
+                    max_tokens=max_tokens
                 )
                 
                 # Store in session state
@@ -325,17 +361,43 @@ def display_blog_result(result):
         # Display the outline in a nice format
         st.markdown(result.outline)
         
-        # Copy button
-        st.download_button(
-            label="💾 Download as Markdown",
-            data=result.to_markdown(),
-            file_name=f"blog_outline_{sanitize_filename(result.topic)}.md",
-            mime="text/markdown"
-        )
+        # Export buttons
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.download_button(
+                label="📥 Download as Markdown",
+                data=result.to_markdown(),
+                file_name=f"blog_outline_{sanitize_filename(result.topic)}.md",
+                mime="text/markdown"
+            )
+        with col2:
+            html_content = generate_html(f"Blog Outline: {result.topic}", result.outline, result.metadata)
+            st.download_button(
+                label="📥 Download as HTML",
+                data=html_content,
+                file_name=f"blog_outline_{sanitize_filename(result.topic)}.html",
+                mime="text/html"
+            )
+        with col3:
+            st.download_button(
+                label="📥 Download as Text",
+                data=result.to_markdown(),
+                file_name=f"blog_outline_{sanitize_filename(result.topic)}.txt",
+                mime="text/plain"
+            )
     
     with tab2:
         # Raw markdown view with copy functionality
         st.code(result.to_markdown(), language="markdown")
+        
+        # Copy-to-clipboard button
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            st.button(
+                "📋 Copy to Clipboard",
+                help="Select all (Ctrl+A) and copy (Ctrl+C) from the text area below",
+                key="copy_blog"
+            )
         
         # Text area for easy copying
         st.text_area(
@@ -430,6 +492,8 @@ def render_social_generator():
                 # Get selected model and provider from session state
                 selected_model = st.session_state.get('selected_model', None)
                 selected_provider = st.session_state.get('selected_provider', None)
+                temperature = st.session_state.get('temperature', 0.7)
+                max_tokens = st.session_state.get('max_tokens', 2000)
                 
                 result = generate_social_calendar(
                     theme=theme.strip(),
@@ -438,7 +502,9 @@ def render_social_generator():
                     timeframe=timeframe,
                     tone=tone,
                     model_override=selected_model,
-                    provider_override=selected_provider
+                    provider_override=selected_provider,
+                    temperature=temperature,
+                    max_tokens=max_tokens
                 )
                 
                 # Store in session state
@@ -480,19 +546,44 @@ def display_social_result(result):
         # Display the calendar in a nice format
         st.markdown(result.calendar)
         
-        # Copy button
-        st.download_button(
-            label="💾 Download as Markdown",
-            data=result.to_markdown(),
-            file_name=f"social_calendar_{sanitize_filename(result.theme)}.md",
-            mime="text/markdown"
-        )
+        # Export buttons
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.download_button(
+                label="📥 Download as Markdown",
+                data=result.to_markdown(),
+                file_name=f"social_calendar_{sanitize_filename(result.theme)}.md",
+                mime="text/markdown"
+            )
+        with col2:
+            html_content = generate_html(f"Social Media Calendar: {result.theme}", result.calendar, result.metadata)
+            st.download_button(
+                label="📥 Download as HTML",
+                data=html_content,
+                file_name=f"social_calendar_{sanitize_filename(result.theme)}.html",
+                mime="text/html"
+            )
+        with col3:
+            st.download_button(
+                label="📥 Download as Text",
+                data=result.to_markdown(),
+                file_name=f"social_calendar_{sanitize_filename(result.theme)}.txt",
+                mime="text/plain"
+            )
     
     with tab2:
         # Raw markdown view with copy functionality
         st.code(result.to_markdown(), language="markdown")
         
-        # Text area for easy copying
+        # Copy-to-clipboard button
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            st.button(
+                "📋 Copy to Clipboard",
+                help="Select all (Ctrl+A) and copy (Ctrl+C) from the text area below",
+                key="copy_social"
+            )
+                # Text area for easy copying
         st.text_area(
             "Copy the calendar below:",
             value=result.to_markdown(),
@@ -592,6 +683,8 @@ def render_writing_generator():
                 # Get selected model and provider from session state
                 selected_model = st.session_state.get('selected_model', None)
                 selected_provider = st.session_state.get('selected_provider', None)
+                temperature = st.session_state.get('temperature', 0.7)
+                max_tokens = st.session_state.get('max_tokens', 2000)
                 
                 result = generate_writing_prompt(
                     genre=genre,
@@ -599,7 +692,9 @@ def render_writing_generator():
                     complexity=complexity,
                     constraints=constraints.strip() if constraints else None,
                     model_override=selected_model,
-                    provider_override=selected_provider
+                    provider_override=selected_provider,
+                    temperature=temperature,
+                    max_tokens=max_tokens
                 )
                 
                 # Store in session state
@@ -641,19 +736,44 @@ def display_writing_result(result):
         # Display the prompt in a nice format
         st.markdown(result.prompt)
         
-        # Copy button
-        st.download_button(
-            label="💾 Download as Markdown",
-            data=result.to_markdown(),
-            file_name=f"writing_prompt_{sanitize_filename(result.genre)}.md",
-            mime="text/markdown"
-        )
+        # Export buttons
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.download_button(
+                label="📥 Download as Markdown",
+                data=result.to_markdown(),
+                file_name=f"writing_prompt_{sanitize_filename(result.genre)}.md",
+                mime="text/markdown"
+            )
+        with col2:
+            html_content = generate_html(f"Writing Prompt: {result.genre.title()}", result.prompt, result.metadata)
+            st.download_button(
+                label="📥 Download as HTML",
+                data=html_content,
+                file_name=f"writing_prompt_{sanitize_filename(result.genre)}.html",
+                mime="text/html"
+            )
+        with col3:
+            st.download_button(
+                label="📥 Download as Text",
+                data=result.to_markdown(),
+                file_name=f"writing_prompt_{sanitize_filename(result.genre)}.txt",
+                mime="text/plain"
+            )
     
     with tab2:
         # Raw markdown view with copy functionality
         st.code(result.to_markdown(), language="markdown")
         
-        # Text area for easy copying
+        # Copy-to-clipboard button
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            st.button(
+                "📋 Copy to Clipboard",
+                help="Select all (Ctrl+A) and copy (Ctrl+C) from the text area below",
+                key="copy_writing"
+            )
+                # Text area for easy copying
         st.text_area(
             "Copy the prompt below:",
             value=result.to_markdown(),

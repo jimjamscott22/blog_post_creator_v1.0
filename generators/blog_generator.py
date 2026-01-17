@@ -50,7 +50,9 @@ def generate_blog_outline(
     content_type: str = "how-to",
     custom_context: Optional[str] = None,
     model_override: Optional[str] = None,
-    provider_override: Optional[str] = None
+    provider_override: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None
 ) -> BlogOutline:
     """
     Generate a blog post outline using the local LLM
@@ -63,6 +65,8 @@ def generate_blog_outline(
         custom_context: Optional custom information/documentation to reference
         model_override: Optional specific model to use (overrides default)
         provider_override: Optional provider to use ('ollama' or 'lm_studio')
+        temperature: Optional temperature setting (0.0-2.0)
+        max_tokens: Optional max tokens for response
     
     Returns:
         BlogOutline object with generated content
@@ -109,7 +113,7 @@ Always format your output clearly with proper headers, bullet points, and sectio
     
     try:
         # Use overrides if provided, otherwise use default
-        llm_instance = LocalLLM(model_override=model_override) if model_override else llm
+        llm_instance = LocalLLM(model_override=model_override, temperature=temperature, max_tokens=max_tokens) if model_override or temperature is not None or max_tokens is not None else llm
         
         # Override provider if specified
         if provider_override:
@@ -123,6 +127,12 @@ Always format your output clearly with proper headers, bullet points, and sectio
                 llm_instance.base_url = settings.LM_STUDIO_BASE_URL
                 if not model_override:
                     llm_instance.model = settings.LM_STUDIO_MODEL
+        
+        # Update temperature and max_tokens if provided
+        if temperature is not None:
+            llm_instance.temperature = temperature
+        if max_tokens is not None:
+            llm_instance.max_tokens = max_tokens
         
         # Generate the outline
         logger.info("Sending request to LLM...")
